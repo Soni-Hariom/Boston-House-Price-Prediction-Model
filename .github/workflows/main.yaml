@@ -1,22 +1,36 @@
----
-name: Deploy to render.
+name: Render Workflow
+
 on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
+
 jobs:
-  build:
+  render:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Build, Push and Release a Docker container to render.
-        uses: gonuit/render-docker-deploy@v1.3.3
-        with:
-          render_email: ${{ secrets.RENDER_EMAIL }}
-          ml_model_render_api_key: ${{ secrets.ML_MODEL_RENDER_API_KEY }}
-          render_app_name: ${{ secrets.RENDER_APP_NAME }}
-          dockerfile_directory: ./
-          dockerfile_name: Dockerfile
-          docker_options: --no-cache
-          process_type: web
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Render scene
+      run: python render.py
+
+    - name: Upload rendered image
+      uses: actions/upload-artifact@v2
+      with:
+        name: render
+        path: rendered.png
